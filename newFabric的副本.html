@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #canvas {
+            border: 1px solid #cccccc;
+        }
+    </style>
+</head>
+<body>
+    <img id="img" src="./a.png" alt="">
+    <canvas id="canvas" width="800" height="800"></canvas>
+</body>
+<script src="node_modules/fabric/dist/fabric.js"></script>
+<script>
+    var canvas = this.__canvas = new fabric.Canvas('canvas', { selection: false, hoverCursor: 'pointer' });
+    fabric.Object.prototype.originX = fabric.Object.prototype.originY = 'center';
+
+    var obj = {
+        bigCircleRadius: 50,
+        smallCircleRadius: 30,
+        centerCircleRadius: 80,
+        deviation: 100,
+        bigTextFontSize: 16,
+        smallTextFontSize: 14,
+        // 划线
+        makeLine: function (coords) {
+            return new fabric.Line(coords, {
+                stroke: 'rgba(0,0,0,0.3)',
+                strokeWidth: 2,
+                selectable: false,
+                evented: false,
+            });
+        },
+
+        // 设置渐变色
+        setItemColor: function (fabricObj, colorArr) {
+            return fabricObj.setGradient('fill', {
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: fabricObj.height,
+                colorStops: {
+                    0: colorArr[0],
+                    1: colorArr[1]
+                }
+            })
+        },
+
+        // 画圆
+        drawCircle: function (left, top, colorArr, text, line, otherCircle, img) {
+            var radius = ''
+            var deviation = 0
+            var textFontSize = 16
+            var moveAble = true
+            if (!otherCircle && !line) {
+                // 表示中心球
+                radius = obj.centerCircleRadius
+                textFontSize = obj.bigTextFontSize
+                moveAble = false
+            } else if (otherCircle) {
+                // 表示大圆
+                radius = obj.bigCircleRadius
+                textFontSize = obj.bigTextFontSize
+                moveAble = true
+            } else {
+                // 表示小圆
+                radius = obj.smallCircleRadius
+                deviation = obj.deviation
+                textFontSize = obj.smallTextFontSize
+                moveAble = false
+            }
+            // 判断小球得左右
+            if (line && line.get('x1') < line.get('x2')) {
+                var deviationLeft =  - deviation
+            } else {
+                var deviationLeft = deviation
+            }
+
+            var circleObj =  new fabric.Circle({
+                radius: radius,
+                left: left,
+                top: top,
+                hasControls: false,
+                hasBorders: false,
+                originX:'center',
+                originY:'center'
+            });
+
+            obj.setItemColor(circleObj, [colorArr[0], colorArr[1]])
+
+
+            var textObj = new fabric.Text(text, {
+                left: left,
+                top: top,
+                fontSize: textFontSize,
+                fill: '#fff'
+            })
+
+            var imgId = document.getElementById('img')
+            console.log(imgId)
+            var imgObj = new fabric.Image(imgId, {
+                left: left,
+                top: top,
+            })
+
+
+            var group = []
+            if (otherCircle) {
+                group = [circleObj, textObj,imgObj]
+            } else {
+                group = [circleObj, textObj]
+            }
+
+
+            var group = new fabric.Group(group, {
+                left: left + deviationLeft,
+                top: top,
+                hasBorders: false,
+                hasControls: false,
+                hasRotatingPoint: false,
+                originX:'center',
+                originY:'center',
+                selectable: moveAble,
+                evented: moveAble,
+            });
+            group.line = line
+            group.otherCircle = otherCircle
+            group.deviation = deviation
+
+            return group
+        }
+    }
+
+
+    var line1 = obj.makeLine([ 250, 175, 400, 400 ])
+    var circleSub1 = obj.drawCircle(line1.get('x1'), line1.get('y1'), ['#84b4ff', '#0860e3'], 'qq', line1, null)
+    var circle1 = obj.drawCircle(line1.get('x1'), line1.get('y1'), ['#84b4ff', '#0860e3'], 'weixin', line1, circleSub1)
+    canvas.add(line1, circleSub1, circle1)
+
+    var line2 = obj.makeLine([ 480, 115, 400, 400 ])
+    var circleSub2 = obj.drawCircle(line2.get('x1'), line2.get('y1'), ['#84b4ff', '#0860e3'], 'qq', line2, null)
+    var circle2 = obj.drawCircle(line2.get('x1'), line2.get('y1'), ['#84b4ff', '#0860e3'], 'weixin', line2, circleSub2)
+    canvas.add(line2, circleSub2, circle2)
+
+    var line3 = obj.makeLine([ 650, 385, 400, 400 ])
+    var circleSub3 = obj.drawCircle(line3.get('x1'), line3.get('y1'), ['#84b4ff', '#0860e3'], 'qq', line3, null)
+    var circle3 = obj.drawCircle(line3.get('x1'), line3.get('y1'), ['#84b4ff', '#0860e3'], 'weixin', line3, circleSub3)
+    canvas.add(line3, circleSub3, circle3)
+
+    var line4 = obj.makeLine([ 130, 388, 400, 400 ])
+    var circleSub4 = obj.drawCircle(line4.get('x1'), line4.get('y1'), ['#84b4ff', '#0860e3'], 'qq', line4, null)
+    var circle4 = obj.drawCircle(line4.get('x1'), line4.get('y1'), ['#84b4ff', '#0860e3'], 'weixin', line4, circleSub4)
+    canvas.add(line4, circleSub4, circle4)
+
+    var centerCircle = obj.drawCircle(400, 400, ['#84b4ff', '#0860e3'], '中心球', null, null)
+    canvas.add(centerCircle)
+
+    canvas.on('object:moving', function(e) {
+        var options = e.target;
+        // 限制拖动区域
+        if (options.left > options.canvas.width - options.otherCircle.deviation - options.otherCircle.width / 2){
+            options.set({'left': options.canvas.width - options.otherCircle.deviation - options.otherCircle.width / 2})
+        } else if (options.left < options.otherCircle.deviation + options.otherCircle.width / 2 ) {
+            options.set({'left': options.otherCircle.deviation + options.otherCircle.width / 2})
+        }
+        if (options.top < options.width / 2) {
+            options.set({'top': options.width / 2})
+        } else if (options.top > options.canvas.height - options.width / 2) {
+            options.set({'top': options.canvas.height - options.width / 2})
+        }
+        // 设置线跟着动
+        options.line && options.line.set({ 'x1': options.left, 'y1': options.top });
+        // 设置附属球跟着动
+        var otherCircleMoveLeft = options.line.get('x1') < options.line.get('x2') ? options.left - options.otherCircle.deviation : options.left + options.otherCircle.deviation
+        options.otherCircle && options.otherCircle.set({ 'left':otherCircleMoveLeft, 'top': options.top})
+
+        // 检测碰撞
+        options.setCoords();
+        canvas.forEachObject(function(obj) {
+            if (obj === options) return;
+            obj.set('opacity' ,options.intersectsWithObject(obj) ? 0.9 : 1);
+        });
+        canvas.renderAll();
+    });
+
+</script>
+
+</html>
